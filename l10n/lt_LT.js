@@ -9,6 +9,7 @@ OC.L10N.register(
     "Address" : "Adresas",
     "New" : "Nauja",
     "Comment" : "Komentaras",
+    "Reference" : "Nuoroda",
     "Choose" : "Pasirinkite",
     "Nothing changed" : "Nieko nepasikeitė",
     "Are you sure you want to delete?" : "Ar tikrai norite ištrinti?",
