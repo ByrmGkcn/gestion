@@ -15,7 +15,7 @@ use OCP\IURLGenerator;
 use OCP\IConfig;
 use OCP\ISession;
 use OCP\AppFramework\Http\Attribute\UseSession;
-
+use OCP\AppFramework\Http\DataDownloadResponse;
 
 use OCP\IUserManager;
 use OCP\IUser;
@@ -773,38 +773,62 @@ class PageController extends Controller {
 	 * @param string $html
 	 * @param string $name
 	 * @param string $folder
-	 * @return void	
+	 * @return void
 	*/
 	#[UseSession]
 	public function generatePDF($html, $name, $folder) {
-		try {
-			$mpdf = new Mpdf([
-				'mode' => 'utf-8',
-				'format' => 'A4',
-				'margin_top' => 10,
-				'margin_bottom' => 10,
-				'margin_left' => 10,
-				'margin_right' => 10,
-			]);
 
+			try {
 
-			$css = file_get_contents(__DIR__ . '/../../css/style.css');
+					$mpdf = new Mpdf([
+							'mode' => 'utf-8',
+							'format' => 'A4',
+							'margin_top' => 10,
+							'margin_bottom' => 10,
+							'margin_left' => 10,
+							'margin_right' => 10,
+							'tempDir' => '/tmp'
+					]);
 
-    		$mpdf->WriteHTML($css, \Mpdf\HTMLParserMode::HEADER_CSS);
-			$mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
+					$css = file_get_contents(
+							__DIR__ . '/../../css/style.css'
+					);
 
-			$pdfContent = $mpdf->Output('', \Mpdf\Output\Destination::STRING_RETURN);
-			$encoded = base64_encode($pdfContent);
-			$this->savePDF($encoded, $folder, $name);
+					$mpdf->WriteHTML(
+							$css,
+							\Mpdf\HTMLParserMode::HEADER_CSS
+					);
 
-			// Envoi du PDF dans la réponse HTTP
-			header('Content-Type: application/pdf');
-			header('Content-Disposition: attachment; filename="' . $name . '.pdf"');
-			echo $pdfContent;
-		} catch (\Mpdf\MpdfException $e) {
-			http_response_code(500);
-			echo "Erreur lors de la génération du PDF : " . $e->getMessage();
-		}
+					$mpdf->WriteHTML(
+							$html,
+							\Mpdf\HTMLParserMode::HTML_BODY
+					);
 
+					$pdfContent = $mpdf->Output(
+							'',
+							\Mpdf\Output\Destination::STRING_RETURN
+					);
+
+					$encoded = base64_encode($pdfContent);
+
+					$this->savePDF(
+							$encoded,
+							$folder,
+							$name
+					);
+
+					return new DataDownloadResponse(
+							$pdfContent,
+							$name . '.pdf',
+							'application/pdf'
+					);
+
+			} catch (\Mpdf\MpdfException $e) {
+
+					return new DataResponse([
+							'status' => 'error',
+							'message' => $e->getMessage()
+					], 500);
+			}
 	}
 }
